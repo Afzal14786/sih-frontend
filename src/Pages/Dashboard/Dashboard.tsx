@@ -3,9 +3,6 @@ import {
   FaSeedling,
   FaTruck,
   FaChartLine,
-  FaBell,
-  FaUser, 
-  FaCircle,
   FaEthereum,
   FaClipboardList,
 } from "react-icons/fa";
@@ -30,18 +27,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, userName }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-green-50 p-6 md:p-10">
-      {/* Header */}
-      <header className="flex justify-between items-center mb-8">
-        <div className="flex items-center space-x-3">
-          <FaEthereum className="text-green-700 text-4xl" />
-          <h1 className="text-3xl font-bold text-green-900">AgriChain Dashboard</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <FaUser className="text-green-700 text-3xl" />
-          <span className="font-semibold text-green-900">{userName}</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-green-50 pt-24 px-6 md:px-10">
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

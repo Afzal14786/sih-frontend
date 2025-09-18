@@ -4,25 +4,33 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 
-// Note: Ensure these components exist and are correctly implemented.
 import Header from "./Header";
+import { UserProvider } from "./UserContext";
 import LoginPage from "./Pages/Login/LoginPage";
 import RegisterPage from "./Pages/Login/RegisterPage";
-import Dashboard from "./Pages/Dashboard/Dashboard";
 import UserProfile from "./Pages/User/UserProfile";
+import SellCropForm from "./Pages/SellCrop/SellCropForm";
+import ProtectedDashboard from "./ProtectedDashboard";
+import Home from "./Pages/Home/Home"
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Header/>
-      <Routes>
-        <Route path="/login" element={<LoginPage/>}/>
-        <Route path="/register" element={<RegisterPage/>}/>
-        <Route path="/dashboard" element={<Dashboard userRole="farmer" userName="Md Afzal"/>}/>
-        <Route path="/user-profile" element={<UserProfile/>}/>
-      </Routes>
+      <UserProvider>
+        <Header />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<RegisterPage />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<ProtectedDashboard />} />
+          <Route path="/sell" element={<SellCropForm />} />
+          <Route path="/user-profile" element={<UserProfile />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+        </Routes>
+      </UserProvider>
     </Router>
   );
 };

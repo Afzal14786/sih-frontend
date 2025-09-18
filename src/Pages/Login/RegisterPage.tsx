@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { FaEthereum, FaUser, FaStore, FaTruck, FaShoppingCart } from "react-icons/fa";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
-type UserRole = 'farmer' | 'farm' | 'distributor' | 'retailer';
+type UserRole = 'farmer' | 'farm' | 'distributor' | 'retailer' | 'admin';
 
 const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState<string>("");
@@ -9,17 +12,49 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const [businessName, setBusinessName] = useState<string>("");
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add blockchain registration logic here
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      toast.error("Passwords do not match!");
       return;
     }
-    alert(`Registering as ${selectedRole}: ${fullName} (${email})`);
+
+    setLoading(true);
+
+    try {
+      // Corrected URL and added withCredentials for session cookies
+      const response = await axios.post(
+        "http://localhost:5174/api/v1/user/register",
+        { 
+          username: fullName, // Backend expects 'username'
+          email, 
+          password, 
+          role: selectedRole 
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        // Navigate to login page after successful registration
+        navigate("/login");
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (err: any) {
+      if (err.response) {
+        toast.error(err.response.data.message || "Registration failed. Please try again.");
+      } else if (err.request) {
+        toast.error("Network error. Please check your connection.");
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const roleOptions = [
@@ -28,6 +63,12 @@ const RegisterPage: React.FC = () => {
     { value: 'distributor' as UserRole, label: 'Distributor', icon: FaTruck, description: 'Supply chain logistics partner' },
     { value: 'retailer' as UserRole, label: 'Retailer', icon: FaShoppingCart, description: 'Store or market selling products' },
   ];
+
+  const passwordsMatch = password === confirmPassword && password.length > 0;
+  const isFormValid = useMemo(() => {
+    return email && fullName && selectedRole && passwordsMatch;
+  }, [email, fullName, selectedRole, passwordsMatch]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-green-100 to-green-300 px-4 py-8">
@@ -70,8 +111,7 @@ const RegisterPage: React.FC = () => {
           {selectedRole && (
             <>
               {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div>
                   <label
                     htmlFor="fullName"
                     className="block text-sm font-medium text-gray-700"
@@ -86,29 +126,11 @@ const RegisterPage: React.FC = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
                     placeholder={selectedRole === 'farm' ? "Sunshine Farms" : "John Doe"}
+                    disabled={loading}
                   />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="businessName"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Business Name (Optional)
-                  </label>
-                  <input
-                    id="businessName"
-                    type="text"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
-                    placeholder="ABC Agriculture Inc."
-                  />
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div>
                   <label
                     htmlFor="email"
                     className="block text-sm font-medium text-gray-700"
@@ -123,26 +145,8 @@ const RegisterPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
                     placeholder="you@example.com"
+                    disabled={loading}
                   />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="phoneNumber"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Phone Number
-                  </label>
-                  <input
-                    id="phoneNumber"
-                    type="tel"
-                    required
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
               </div>
 
               {/* Password Section */}
@@ -162,6 +166,7 @@ const RegisterPage: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
                     placeholder="********"
+                    disabled={loading}
                   />
                 </div>
 
@@ -178,17 +183,27 @@ const RegisterPage: React.FC = () => {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+                    className={`mt-1 block w-full rounded-md border ${
+                      confirmPassword && !passwordsMatch ? 'border-red-500' : 'border-gray-300'
+                    } px-3 py-2 focus:border-green-500 focus:ring focus:ring-green-200 focus:ring-opacity-50`}
                     placeholder="********"
+                    disabled={loading}
                   />
                 </div>
               </div>
 
+              {!passwordsMatch && (
+                  <p className="text-red-500 text-sm mt-2 text-center">Passwords must match</p>
+              )}
+
               <button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-md transition-colors"
+                disabled={!isFormValid || loading}
+                className={`w-full text-white font-semibold py-3 rounded-md transition-colors ${
+                  isFormValid && !loading ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+                }`}
               >
-                Create Account
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
             </>
           )}
